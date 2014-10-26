@@ -4,4 +4,6 @@
 
 /.classpath
 
-/src/group503/SystemConcept.java
+.gitignore
+
+src/group503/SystemConcept.java
