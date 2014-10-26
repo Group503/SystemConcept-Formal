@@ -1,8 +1,8 @@
-/bin/
+bin/
 
-/.project
+.project
 
-/.classpath
+.classpath
 
 .gitignore
 
