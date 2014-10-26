@@ -4,7 +4,12 @@ public class SystemConcept {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+<<<<<<< HEAD
 		System.out.println("恩坚test method");
+=======
+		System.out.println("dafaf");
+
+>>>>>>> FETCH_HEAD
 	}
 
 }
