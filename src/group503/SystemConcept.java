@@ -3,8 +3,10 @@ package group503;
 public class SystemConcept {
 
 	public static void main(String[] args) {
-		System.out.println("sum22");
+		// TODO Auto-generated method stub
 
+		System.out.println("恩坚test method");
 	}
 
 }
+
