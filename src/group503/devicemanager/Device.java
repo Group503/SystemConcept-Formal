@@ -1,12 +1,9 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package group503.devicemanager;
 
 /**
- *
- * @author yonss
+ * 设备类
+ * @author 刘恩坚
  */
 public class Device {
     String name;// 设备名称

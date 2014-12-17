@@ -3,28 +3,47 @@ package group503.devicemanager;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 设备测试类
+ * @author 刘恩坚
+ */
 public class DeviceManagerTest {
 
     public static void main(String args[]) {
-
-        Map<String, Device> allDevice = new HashMap<String, Device>();// 设备类表
-        DeviceStatus[] allDeviceStatus;// 设备状态表
-
-        allDevice.put("A", new Device("A", 1, 0));
-        allDevice.put("B", new Device("B", 2, 1));
-        allDevice.put("C", new Device("C", 2, 3));
-
-        int amount = 0;// 记录设备总数
-        for (String key : allDevice.keySet()) {
-            Device value = allDevice.get(key);
-            amount += value.amount;
+        
+        DeviceManager deviceManager = new DeviceManager();
+        DeviceInfoMap brI = new DeviceInfoMap();
+        brI.add(deviceManager.allDevice.get("A").name, 1);
+        brI.add(deviceManager.allDevice.get("B").name, 2);
+        int process_ID = 1233;
+        int status = deviceManager.allocate(process_ID, brI);
+        if(status == -1){
+            System.out.println("进程" + process_ID + "申请（+已占用）设备总量超过总数！");
+        }else if(status == 0){
+            System.out.println("进程" + process_ID + "未通过银行家算法，进程不安全不可分配");
+        }else if(status == 1){
+            System.out.println("进程" + process_ID + "通过银行家算法，进程安全可分配！");
+        }else if(status == 2){
+            System.out.println("进程" + process_ID + "通过银行家算法，进程安全但需要等待！");
         }
-
-        allDeviceStatus = new DeviceStatus[amount];
-
-        for (int i = 0; i < amount; i++) {
-            allDeviceStatus[i] = new DeviceStatus(i);
-            System.out.println(allDeviceStatus[i].ID);
+        //deviceManager.printDev();
+        brI = new DeviceInfoMap();
+        brI.add(deviceManager.allDevice.get("C").name, 1);
+        
+        status = deviceManager.allocate(process_ID, brI);
+        if(status == -1){
+            System.out.println("进程" + process_ID + "申请（+已占用）设备总量超过总数！");
+        }else if(status == 0){
+            System.out.println("进程" + process_ID + "未通过银行家算法，进程不安全不可分配");
+        }else if(status == 1){
+            System.out.println("进程" + process_ID + "通过银行家算法，进程安全可分配！");
+        }else if(status == 2){
+            System.out.println("进程" + process_ID + "通过银行家算法，进程安全但需要等待！");
         }
+        //deviceManager.printDev();
+        
+//        deviceManager.deAllocate(process_ID);
+//        System.out.println("进程" + process_ID + "已释放设备！");
+//        deviceManager.printDev();
     }
 }
