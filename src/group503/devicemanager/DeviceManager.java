@@ -18,8 +18,29 @@ public class DeviceManager {
     ArrayList<DeviceStatus> allDeviceStatus = new ArrayList<DeviceStatus>();// 设备状态表
     Map<Integer, DeviceInfoMap> processInfo = new LinkedHashMap<Integer, DeviceInfoMap>();// 进程占用设备表
     Queue<QueueElem> d_Queue = new LinkedList<QueueElem>();// 设备等待队列
-//以上这些属性，应设置为private，提供方法供外部(仅)读取，不能改变
 
+ /*//以上这些属性，应设置为private，提供方法供外部(仅)读取，不能改变
+    private Map<String, Device> allDevice = new LinkedHashMap<String, Device>();// 设备类表
+    private ArrayList<DeviceStatus> allDeviceStatus = new ArrayList<DeviceStatus>();// 设备状态表
+    private Map<Integer, DeviceInfoMap> processInfo = new LinkedHashMap<Integer, DeviceInfoMap>();// 进程占用设备表
+    private Queue<QueueElem> d_Queue = new LinkedList<QueueElem>();// 设备等待队列
+
+    public Map<String, Device> getAllDevice() {
+        return allDevice;
+    }
+
+    public ArrayList<DeviceStatus> getAllDeviceStatus() {
+        return allDeviceStatus;
+    }
+
+    public Map<Integer, DeviceInfoMap> getProcessInfo() {
+        return processInfo;
+    }
+
+    public Queue<QueueElem> getD_Queue() {
+        return d_Queue;
+    }
+*/
     DeviceManager() {
         // 初始化设备类、设备状态表
         initDevice();
@@ -273,7 +294,8 @@ public class DeviceManager {
                 // 剩下对应序列的进程按顺序入队列等待
                 allocateDevice(cur.process_ID, cur.borrowInfo);// 将设备分配给cur.process_ID进程
 
-// ********************************************************TODO，通知该进程                
+// ********************************************************TODO，通知该进程 
+                deviceWatcher.allocatedDeviceTo(cur.process_ID);
 
                 bk.SafeSet.remove(0);// 除去序列首
 
@@ -357,5 +379,17 @@ public class DeviceManager {
         } else {
             System.out.println("设备等待队列，空！");
         }
+    }
+    //**************************************************************************以下为监听器
+    private DeviceWatcherImpl deviceWatcher;// 监听器实例
+    //Tips:谁被监听，谁就得有那个用于监听的接口实例；
+    //     具体通知什么内容，由被监听者发送（即此处的int process_ID）；
+    //     接口的方法，即是通知观察者时，观察者处理的地方
+
+    /**
+     * （观察者的）进程监听器（监听设备，设备分配给进程后就通知观察者）
+     */
+    public void addDeviceWatcher(DeviceWatcherImpl deviceWatcher) {
+        this.deviceWatcher = deviceWatcher;// 由观察者注册得到
     }
 }
