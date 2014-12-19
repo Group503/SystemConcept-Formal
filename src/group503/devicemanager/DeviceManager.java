@@ -1,7 +1,7 @@
 package group503.devicemanager;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -12,11 +12,13 @@ import java.util.Queue;
  * @author 刘恩坚
  */
 public class DeviceManager {
+// HaspMap遍历，http://www.cnblogs.com/fczjuever/archive/2013/04/07/3005997.html
 
-    Map<String, Device> allDevice = new HashMap<String, Device>();// 设备类表
+    Map<String, Device> allDevice = new LinkedHashMap<String, Device>();// 设备类表
     ArrayList<DeviceStatus> allDeviceStatus = new ArrayList<DeviceStatus>();// 设备状态表
-    Map<Integer, DeviceInfoMap> processInfo = new HashMap<Integer, DeviceInfoMap>();// 进程占用设备表
+    Map<Integer, DeviceInfoMap> processInfo = new LinkedHashMap<Integer, DeviceInfoMap>();// 进程占用设备表
     Queue<QueueElem> d_Queue = new LinkedList<QueueElem>();// 设备等待队列
+//以上这些属性，应设置为private，提供方法供外部(仅)读取，不能改变
 
     DeviceManager() {
         // 初始化设备类、设备状态表
@@ -29,10 +31,16 @@ public class DeviceManager {
      * 初始化设备类表
      */
     private void initDevice() {
+        /*//题目要求
+         allDevice.put("A", new Device("A", 1, 0));
+         allDevice.put("B", new Device("B", 2, 1));
+         allDevice.put("C", new Device("C", 2, 3));
+         */
+        // 书本例题
+        allDevice.put("A", new Device("A", 10, 0));
+        allDevice.put("B", new Device("B", 5, 10));
+        allDevice.put("C", new Device("C", 7, 15));
 
-        allDevice.put("A", new Device("A", 1, 0));
-        allDevice.put("B", new Device("B", 2, 1));
-        allDevice.put("C", new Device("C", 2, 3));
     }
 
     /**
@@ -40,22 +48,29 @@ public class DeviceManager {
      */
     private void initDeviceStatus() {
 
-        // HaspMap遍历，http://www.cnblogs.com/fczjuever/archive/2013/04/07/3005997.html
-//        for (String key : allDevice.keySet()) {
-//            Device value = allDevice.get(key);
-//            amount += value.amount;
-//        }
-
         for (String key : allDevice.keySet()) {
             Device value = allDevice.get(key);
             for (int i = value.r_address; i < value.r_address + value.amount; i++) {
                 allDeviceStatus.add(new DeviceStatus(value.name, i, i - value.r_address));
             }
         }
-//        for (DeviceStatus e : allDeviceStatus) {
-//
-//            System.out.println(e.name + " - " + e.ID + " - " + e.r_ID);
-//        }
+    }
+
+    /**
+     * 格式化设备信息
+     *
+     * @param info （需要格式化的）设备信息
+     * @return 格式化的设备信息
+     */
+    private DeviceInfoMap formatDeviceInfo(DeviceInfoMap info) {
+        for (String dName : allDevice.keySet()) {
+            if (info.containsKey(dName)) {// info设备表中已存在的设备信息，跳过
+                continue;
+            }
+            info.add(dName, 0);// info设备中未有的，设备数量都置0
+        }
+
+        return info;
     }
 
     /**
@@ -67,18 +82,18 @@ public class DeviceManager {
     private void allocateDevice(int process_ID, DeviceInfoMap borrowInfo) {
         DeviceInfoMap ocpI = new DeviceInfoMap();
         // 将申请的设备分配给该进程，更新 设备类表 和 设备状态表
-        for (String key : borrowInfo.keySet()) {// key -> borrowInfo.get(key)
-            int value = borrowInfo.get(key);
-            ocpI.add(key, value);// 组合进程占用的设备信息
+        for (String dName : borrowInfo.keySet()) {// dName -> borrowInfo.get(dName)
+            int value = borrowInfo.get(dName);
+            ocpI.add(dName, value);// 组合进程占用的设备信息
 
-            allDevice.get(key).left -= value;// 更新 设备类表
+            allDevice.get(dName).left -= value;// 更新 设备类表
 
             // 更新 设备状态表
             int c_alloc = 0;// 成功分配该设备个数
             for (int i = 0; i < allDeviceStatus.size(); i++) {
 
                 DeviceStatus e = allDeviceStatus.get(i);
-                if (e.name.equals(key) && !e.isAllocate) {// 目标设备，且未分配
+                if (e.name.equals(dName) && !e.isAllocate) {// 目标设备，且未分配
 
                     allDeviceStatus.get(i).isAllocate = true;
                     allDeviceStatus.get(i).process_ID = process_ID;
@@ -90,6 +105,17 @@ public class DeviceManager {
                 }
             }
         }
+
+        ocpI = formatDeviceInfo(ocpI);// 格式化进程占用设备信息
+
+        // 如果该进程已有占用设备，则  新占用设备 = 已占用的设备 + 新申请的设备
+        if (processInfo.containsKey(process_ID)) {
+            DeviceInfoMap old_PcID = processInfo.get(process_ID);
+            for (String dName : old_PcID.keySet()) {
+                ocpI.add(dName, ocpI.get(dName) + old_PcID.get(dName));
+            }
+        }
+
         processInfo.put(process_ID, ocpI);// 更新 进程占用设备表
         System.out.println("##allocateDevice  --  " + "设备成功分配给该进程！");
         //printDev();// 打印输出
@@ -106,9 +132,11 @@ public class DeviceManager {
 //       判断申请是否合理（不超出总数）
 //          合理，判断[设备等待队列]是否空
 //               是，第1个进程占用设备，直接分配，更新 设备分配表
-//               否，判断是否可分配设备给当前进程元素（cur=new队列元素类）
-//                    可以分配，返回true
-//                    不可分配，返回false
+//               否，toBankJudge(cur)
+
+        // 预处理borrowInfo
+        borrowInfo = formatDeviceInfo(borrowInfo);
+
         if (!checkBorrow_All(borrowInfo)) {
             return -1;
         }
@@ -118,10 +146,10 @@ public class DeviceManager {
             allocateDevice(process_ID, borrowInfo);
             return 1;
         } else {
-            System.out.println("进程占用设备表不为空");
+            //System.out.println("进程占用设备表不为空");
             // 判断是否可分配设备给当前进程元素（cur=new队列元素类）
             QueueElem cur = new QueueElem(process_ID, borrowInfo);
-            return toAlocate(cur);
+            return toBankJudge(cur);
         }
 
     }
@@ -132,12 +160,16 @@ public class DeviceManager {
      * @return
      */
     public void deAllocate(int process_ID) {
+        DeviceInfoMap curPc = processInfo.get(process_ID);
+        for (String dName : curPc.keySet()) {
+            allDevice.get(dName).left += curPc.get(dName);
+        }
 
         for (int i = 0; i < allDeviceStatus.size(); i++) {
 
             DeviceStatus e = allDeviceStatus.get(i);
             if (e.process_ID == process_ID) {// 目标进程
-                allDevice.get(e.name).left++;// 更新 设备类表
+                //allDevice.get(e.name).left++;// 更新 设备类表
 
                 // 更新 设备状态表
                 allDeviceStatus.get(i).isAllocate = false;
@@ -146,6 +178,16 @@ public class DeviceManager {
         }
         processInfo.remove(process_ID);// 更新 进程占用设备表
         //printDev();// 打印输出
+        activate();
+    }
+
+    /**
+     * 释放设备后，toBankJudge(cur)，判断是否能够分配设备给设备等待队列首的进程
+     */
+    private void activate() {
+        // 判断是否可分配设备给当前进程元素（cur=new队列元素类）
+        QueueElem cur = this.d_Queue.remove();
+        toBankJudge(cur);
     }
 
     /**
@@ -156,98 +198,102 @@ public class DeviceManager {
      */
     private boolean checkBorrow_All(DeviceInfoMap borrowInfo) {
         boolean isLegal = true;
-        for (String key : borrowInfo.keySet()) {// key -> borrowInfo.get(key)
+        for (String key : borrowInfo.keySet()) {// dName -> borrowInfo.get(dName)
 
             if (borrowInfo.get(key) > allDevice.get(key).amount) {
                 // 对应key的设备，申请数量 > 总数量
                 System.out.println("##checkBorrow_All  --  " + key + "设备，申请数量" + borrowInfo.get(key) + " > 总数量" + allDevice.get(key).amount);
                 isLegal = false;
                 break;
-                
             }
         }
 
-        if(!isLegal){
+        if (!isLegal) {
             return false;
         }
-        
+
         System.out.println("##checkBorrow_All  --  " + "设备申请信息borrowInfo，通过合法性(总数)检查！");
         return true;
     }
 
     /**
-     * 判断是否可分配设备给当前进程元素（cur=new队列元素类）
+     * 组装“银行”环境，调用银行家算法。根据返回结果，（分配设备，并）将（安全或不安全的）序列入设备等待队列
      *
-     * @param cur
-     * @return
+     * @param cur 当前申请设备的进程信息，QueueElem队列元素
+     * @return 0不安全不可分配 1安全可分配 2安全但等待
      */
-    private int toAlocate(QueueElem cur) {
-        //检查该进程是否已占用有设备（即同一进程重复申请设备）(总设备有1A+2B+2C)
-        //情况如：进程1233已占用1A+2B，再申请1A，如不判断，则[进程1233，申请1A]会进队列，但事实上不可能满足（因为申请数>总数）
+    private int toBankJudge(QueueElem cur) {
 
-        //检查cur.process_ID在processInfo表中存在
-        //  存在，即已占用设备的进程，再次申请
-        //      取出该进程占用的设备信息+再次申请的设备信息，判断总设备数量是否合法
-        //          合法，调用银行家算法
-        //          不合法，return -1;
-        //  不存在
-        //      判断设备申请信息是否合法
-        //          合法，调用银行家算法
-        //          不合法，return -1;
+        DeviceInfoMap Avaliable = new DeviceInfoMap();// 剩余设备信息
+        Map<Integer, BKProcess> bkProcessES = new LinkedHashMap<Integer, BKProcess>();// 进程集合
 
-        boolean isLegal = true;// 设备申请总数是否合法标记
-        if (processInfo.containsKey(cur.process_ID)) {
-            System.out.println("有这个进程ID！");
+        // 组装Avaliable剩余设备信息
+        for (String dName : allDevice.keySet()) {
+            Avaliable.add(dName, allDevice.get(dName).left);
+        }
 
-            DeviceInfoMap ocpI = processInfo.get(cur.process_ID);// 已存在进程中的占用设备信息
-            DeviceInfoMap brI = cur.borrowInfo;// 总占用设备信息
+        // 组装bkProcessES进程集合
+        BKProcess bkpc = new BKProcess(processInfo.get(cur.process_ID), cur.borrowInfo);// (进程已占用设备信息，申请设备信息)
+        // cur为第1个进程信息，入进程集
+        bkProcessES.put(cur.process_ID, bkpc);
+        while (!d_Queue.isEmpty()) {// 设备等待队列中的进程，入进程集
+            QueueElem e = d_Queue.remove();
+            if (e.process_ID == cur.process_ID) {// 排除设备等待队列中与cur相同的进程
+                System.out.println("##toAllocate  --  " + "队列中存在相同进程，排除");
+                continue;
+            }
+            bkpc = new BKProcess(processInfo.get(e.process_ID), e.borrowInfo);// (进程已占用设备信息，申请设备信息)
+            bkProcessES.put(e.process_ID, bkpc);
+        }
+        Bank bk = new Bank(Avaliable, bkProcessES);// 初始化“银行”环境
+//***********************************************************************************************以上初始化“银行”环境
+        int status = bk.Safety();// 调用银行家算法，返回0/1/2
 
-            for (String dName : ocpI.keySet()) {// 组合总占用设备信息到brI
-                if (brI.containsKey(dName)) {// cur.borrowInfo包含已存在进程ocpI中的占用设备
+        System.out.println("*******安全系列如下********");
+        for (Integer pc_ID : bk.SafeSet) {
 
-                    brI.add(dName, ocpI.get(dName) + brI.get(dName));// 新的总量，覆盖
-                } else {// 不包含，申请了新的设备总类
+            System.out.print(pc_ID + ",");
+        }
+        System.out.println();
 
-                    brI.add(dName, ocpI.get(dName));// 增加
+        // 改变了Avaliable(内部)，Work(内部)，SafeSet(返回0.空；返回1/2,不空)，bkProcessES.Finished全true/false
+
+        // 根据返回值，（分配设备，并）更新设备等待队列
+        QueueElem e = null;
+        if (status == 0) {
+
+            // bkProcessES中的进程重新入队列
+            for (Integer p_ID : bk.bkProcessES.keySet()) {
+                e = new QueueElem(p_ID, bk.bkProcessES.get(p_ID).Need);
+                d_Queue.add(e);
+            }
+        } else {
+            if (status == 1) {
+                // 将设备分配给cur.process_ID进程
+                // 剩下对应序列的进程按顺序入队列等待
+                allocateDevice(cur.process_ID, cur.borrowInfo);// 将设备分配给cur.process_ID进程
+
+// ********************************************************TODO，通知该进程                
+
+                bk.SafeSet.remove(0);// 除去序列首
+
+                // 剩下的进程对应序列顺序，入队列等待
+                for (Integer p_ID : bk.SafeSet) {
+                    e = new QueueElem(p_ID, bk.bkProcessES.get(p_ID).Need);
+                    d_Queue.add(e);
+                }
+
+            } else {//status == 2
+
+                // 进程按序列顺序入队列等待
+                for (Integer p_ID : bk.SafeSet) {
+                    e = new QueueElem(p_ID, bk.bkProcessES.get(p_ID).Need);
+                    d_Queue.add(e);
                 }
             }
-
-            if (!checkBorrow_All(brI)) {// 不合法
-                isLegal = false;
-            }
-        }else{
-            if (!checkBorrow_All(cur.borrowInfo)) {// 不合法
-                isLegal = false;
-            }
         }
 
-        if (!isLegal) {// 不合法
-            return -1;
-        }else{
-            // 调用银行家算法
-            
-            return 0;// 不安全，不可分配
-        }
-    }
-
-    /**
-     * toAlocate调用的内层方法to_2_Alocate
-     *
-     * @return
-     */
-    private boolean to_2_Alocate() {
-
-        return false;
-    }
-
-    /**
-     * 银行家算法
-     *
-     * @return
-     */
-    private boolean bankJudge() {
-
-        return false;
+        return status;// 返回0/1/2
     }
 
     /**
@@ -256,17 +302,19 @@ public class DeviceManager {
     public void printDev() {
         System.out.println("##printDev  --  " + "打印 设备类表，设备状态表，设备等待队列！");
         System.out.println("设备类表");
+        System.out.println("设备名\t总数\t空闲数\t相对地址");
         for (String key : allDevice.keySet()) {
             Device value = allDevice.get(key);
-            System.out.println("设备名\t总数\t空闲数\t相对地址");
+
             System.out.println(value.name + "\t" + value.amount + "\t" + value.left + "\t" + value.r_address);
         }
 
         System.out.println("-------------------------------------");
         System.out.println("设备状态表");
+        System.out.println("设备名\t设备ID\t是否分配\t占用进程\t相对地址号");
         for (int i = 0; i < allDeviceStatus.size(); i++) {
             DeviceStatus e = allDeviceStatus.get(i);
-            System.out.println("设备名\t设备ID\t是否分配\t占用进程\t相对地址号");
+
             System.out.println(e.name + "\t" + e.ID + "\t" + e.isAllocate + "\t" + e.process_ID + "\t" + e.r_ID);
         }
 
@@ -274,9 +322,10 @@ public class DeviceManager {
         if (!processInfo.isEmpty()) {
 
             System.out.println("进程占用设备表");
+            System.out.println("进程ID\t占用设备信息");
             for (Integer process_ID : processInfo.keySet()) {
                 DeviceInfoMap ocpI = processInfo.get(process_ID);
-                System.out.println("进程ID\t占用设备信息");
+
                 System.out.println(process_ID);
                 for (String key : ocpI.keySet()) {
                     System.out.println("\t" + key + ":" + ocpI.get(key));
@@ -290,10 +339,11 @@ public class DeviceManager {
         if (!d_Queue.isEmpty()) {
 
             System.out.println("设备等待队列");
+            System.out.println("进程ID\t设备申请信息");
             int queueSize = d_Queue.size();
             for (int i = 0; i < queueSize; i++) {
                 QueueElem e = d_Queue.remove();
-                System.out.println("进程ID\t设备申请信息");
+
                 System.out.print(e.process_ID + "\t");
 
                 DeviceInfoMap brI = e.borrowInfo;

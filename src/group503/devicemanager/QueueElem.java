@@ -11,7 +11,7 @@ import java.util.Map;
 public class QueueElem {
     int process_ID;// 进程ID
     DeviceInfoMap borrowInfo = new DeviceInfoMap();// 设备申请信息
-    //Map<String,Integer> borrowInfo = new HashMap<String,Integer>();// 设备申请信息
+    //Map<String,Integer> borrowInfo = new LinkedHashMap<String,Integer>();// 设备申请信息
     /*
       {
           进程ID,

@@ -7,8 +7,8 @@ package group503.devicemanager;
 import java.util.HashMap;
 
 /**
- *
- * @author yonss
+ * 设备信息类（key -> value）
+ * @author 刘恩坚
  */
 public class DeviceInfoMap extends HashMap<String,Integer> {
     
