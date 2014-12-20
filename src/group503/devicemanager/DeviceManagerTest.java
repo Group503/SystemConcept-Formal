@@ -13,17 +13,17 @@ public class DeviceManagerTest {
     public static void main(String args[]) {
 
 // *********************************************************************测试书本上的例题
-        DeviceManager deviceManager = new DeviceManager();
+        DeviceManager deviceManager = new DeviceManager();// 设备管理实例
         
         // 测试监听器
         deviceManager.addDeviceWatcher(new DeviceWatcherImpl() {
             @Override
             public void allocatedDeviceTo(int process_ID, int status) {
-                System.out.println("哈哈哈哈哈哈哈哈，爽！");
+                System.out.println("监听器收到通知了！");
             }
         });
         DeviceInfoMap info;
-        DeviceInfoMap br;
+        DeviceInfoMap br;// 申请设备信息实例
         QueueElem e;
         int pcs;
 
@@ -122,13 +122,13 @@ public class DeviceManagerTest {
 // ****************************************************************以上为例题初始环境模拟*********************************
         
 // ***************************以下为模拟进程P1申请设备A1,B2,C2（此处模拟P1是为了方便以PPT上例题的解为参照）********************
-        br.add("A", 1);
-        br.add("B", 2);
-        br.add("C", 2);
+        br.add("A", 1);// 借1个A设备
+        br.add("B", 2);// 借2个B设备
+        br.add("C", 2);// 借2个C设备
         //e = new QueueElem(1, br);//申请1个设备B
         //deviceManager.d_Queue.add(e);//加入等待队列
 
-        int status = deviceManager.allocate(pcs, br);//模拟进程33申请2个B设备
+        int status = deviceManager.allocate(pcs, br);//模拟进程pcs=1申请1A,2B,2C
         if (status == -1) {
             System.out.println("进程P" + pcs + "申请（+已占用）设备总量超过总数！");
         } else if (status == 0) {
@@ -144,7 +144,7 @@ public class DeviceManagerTest {
         
         // 测试展示界面deviceManager.showPanel
         JFrame tFrame = new JFrame();
-        tFrame.add(deviceManager.showPanel);
+        tFrame.add(deviceManager.showPanel);// 设备情况展示panel，直接使用，会实时更新
 
         tFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         tFrame.setLocationRelativeTo(null);
@@ -152,7 +152,7 @@ public class DeviceManagerTest {
         tFrame.setVisible(true);
 
         // 将进程1释放，测试展示界面是否实时更新
-        deviceManager.deAllocate(pcs);//模拟进程33申请2个B设备
+        deviceManager.deAllocate(pcs);// 释放进程pcs=1占用的设备
         deviceManager.printDev();// 打印输出
     }
 }
