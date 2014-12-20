@@ -1,7 +1,7 @@
 package group503.devicemanager;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Locale;
+import javax.swing.JFrame;
 
 /**
  * 设备测试类
@@ -12,7 +12,16 @@ public class DeviceManagerTest {
 
     public static void main(String args[]) {
 
+// *********************************************************************测试书本上的例题
         DeviceManager deviceManager = new DeviceManager();
+        
+        // 测试监听器
+        deviceManager.addDeviceWatcher(new DeviceWatcherImpl() {
+            @Override
+            public void allocatedDeviceTo(int process_ID, int status) {
+                System.out.println("哈哈哈哈哈哈哈哈，爽！");
+            }
+        });
         DeviceInfoMap info;
         DeviceInfoMap br;
         QueueElem e;
@@ -28,6 +37,9 @@ public class DeviceManagerTest {
         br = new DeviceInfoMap();
         info.add("A", 0);
         info.add("B", 1);
+        deviceManager.allDeviceStatus.get(10).isAllocate = true;
+        deviceManager.allDeviceStatus.get(10).process_ID = 0;
+        deviceManager.allDeviceStatus.get(10).r_ID = 0;
         info.add("C", 0);
         deviceManager.processInfo.put(0, info);//占用1个设备A
         br.add("A", 7);
@@ -41,8 +53,14 @@ public class DeviceManagerTest {
         info = new DeviceInfoMap();
         br = new DeviceInfoMap();
         info.add("A", 3);
+        deviceManager.allDeviceStatus.get(0).isAllocate = true;deviceManager.allDeviceStatus.get(1).isAllocate = true;deviceManager.allDeviceStatus.get(2).isAllocate = true;
+        deviceManager.allDeviceStatus.get(0).process_ID = 2;deviceManager.allDeviceStatus.get(1).process_ID = 2;deviceManager.allDeviceStatus.get(2).process_ID = 2;
+        deviceManager.allDeviceStatus.get(0).r_ID = 0;deviceManager.allDeviceStatus.get(1).r_ID = 1;deviceManager.allDeviceStatus.get(2).r_ID = 2;
         info.add("B", 0);
         info.add("C", 2);
+        deviceManager.allDeviceStatus.get(15).isAllocate = true;deviceManager.allDeviceStatus.get(16).isAllocate = true;
+        deviceManager.allDeviceStatus.get(15).process_ID = 2;deviceManager.allDeviceStatus.get(16).process_ID = 2;
+        deviceManager.allDeviceStatus.get(15).r_ID = 0;deviceManager.allDeviceStatus.get(16).r_ID = 1;
         deviceManager.processInfo.put(2, info);//占用1个设备A
         br.add("A", 6);
         br.add("B", 0);
@@ -55,8 +73,17 @@ public class DeviceManagerTest {
         info = new DeviceInfoMap();
         br = new DeviceInfoMap();
         info.add("A", 2);
+        deviceManager.allDeviceStatus.get(3).isAllocate = true;deviceManager.allDeviceStatus.get(4).isAllocate = true;
+        deviceManager.allDeviceStatus.get(3).process_ID = 3;deviceManager.allDeviceStatus.get(4).process_ID = 3;
+        deviceManager.allDeviceStatus.get(3).r_ID = 3;deviceManager.allDeviceStatus.get(4).r_ID = 4;
         info.add("B", 1);
+        deviceManager.allDeviceStatus.get(11).isAllocate = true;
+        deviceManager.allDeviceStatus.get(11).process_ID = 3;
+        deviceManager.allDeviceStatus.get(11).r_ID = 1;
         info.add("C", 1);
+        deviceManager.allDeviceStatus.get(17).isAllocate = true;
+        deviceManager.allDeviceStatus.get(17).process_ID = 3;
+        deviceManager.allDeviceStatus.get(17).r_ID = 2;
         deviceManager.processInfo.put(3, info);//占用1个设备A
         br.add("A", 0);
         br.add("B", 1);
@@ -71,6 +98,9 @@ public class DeviceManagerTest {
         info.add("A", 0);
         info.add("B", 0);
         info.add("C", 2);
+        deviceManager.allDeviceStatus.get(18).isAllocate = true;deviceManager.allDeviceStatus.get(19).isAllocate = true;
+        deviceManager.allDeviceStatus.get(18).process_ID = 4;deviceManager.allDeviceStatus.get(19).process_ID = 4;
+        deviceManager.allDeviceStatus.get(18).r_ID = 3;deviceManager.allDeviceStatus.get(19).r_ID = 4;
         deviceManager.processInfo.put(4, info);//占用1个设备A
         br.add("A", 4);
         br.add("B", 3);
@@ -83,15 +113,20 @@ public class DeviceManagerTest {
         info = new DeviceInfoMap();
         br = new DeviceInfoMap();
         info.add("A", 2);
+        deviceManager.allDeviceStatus.get(5).isAllocate = true;deviceManager.allDeviceStatus.get(6).isAllocate = true;
+        deviceManager.allDeviceStatus.get(5).process_ID = 1;deviceManager.allDeviceStatus.get(6).process_ID = 1;
+        deviceManager.allDeviceStatus.get(5).r_ID = 5;deviceManager.allDeviceStatus.get(6).r_ID = 6;
         info.add("B", 0);
         info.add("C", 0);
         deviceManager.processInfo.put(1, info);//占用1个设备A
-
+// ****************************************************************以上为例题初始环境模拟*********************************
+        
+// ***************************以下为模拟进程P1申请设备A1,B2,C2（此处模拟P1是为了方便以PPT上例题的解为参照）********************
         br.add("A", 1);
         br.add("B", 2);
         br.add("C", 2);
-        e = new QueueElem(1, br);//申请1个设备B
-        deviceManager.d_Queue.add(e);//加入等待队列
+        //e = new QueueElem(1, br);//申请1个设备B
+        //deviceManager.d_Queue.add(e);//加入等待队列
 
         int status = deviceManager.allocate(pcs, br);//模拟进程33申请2个B设备
         if (status == -1) {
@@ -103,11 +138,21 @@ public class DeviceManagerTest {
         } else if (status == 2) {
             System.out.println("进程P" + pcs + "通过银行家算法，进程安全但需要等待！");
         }
-        deviceManager.printDev();
+        deviceManager.printDev();// 打印输出
         
-        // 将进程1释放
+        
+        
+        // 测试展示界面deviceManager.showPanel
+        JFrame tFrame = new JFrame();
+        tFrame.add(deviceManager.showPanel);
+
+        tFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        tFrame.setLocationRelativeTo(null);
+        tFrame.setSize(360, 300);
+        tFrame.setVisible(true);
+
+        // 将进程1释放，测试展示界面是否实时更新
         deviceManager.deAllocate(pcs);//模拟进程33申请2个B设备
-        
-        deviceManager.printDev();
+        deviceManager.printDev();// 打印输出
     }
 }

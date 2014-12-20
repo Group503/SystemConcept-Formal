@@ -18,34 +18,40 @@ public class DeviceManager {
     ArrayList<DeviceStatus> allDeviceStatus = new ArrayList<DeviceStatus>();// 设备状态表
     Map<Integer, DeviceInfoMap> processInfo = new LinkedHashMap<Integer, DeviceInfoMap>();// 进程占用设备表
     Queue<QueueElem> d_Queue = new LinkedList<QueueElem>();// 设备等待队列
+    DevicePanel showPanel;// 设备信息展示界面
 
- /*//以上这些属性，应设置为private，提供方法供外部(仅)读取，不能改变
-    private Map<String, Device> allDevice = new LinkedHashMap<String, Device>();// 设备类表
-    private ArrayList<DeviceStatus> allDeviceStatus = new ArrayList<DeviceStatus>();// 设备状态表
-    private Map<Integer, DeviceInfoMap> processInfo = new LinkedHashMap<Integer, DeviceInfoMap>();// 进程占用设备表
-    private Queue<QueueElem> d_Queue = new LinkedList<QueueElem>();// 设备等待队列
+    /*//以上这些属性，应设置为private，提供方法供外部(仅)读取，不能改变
+     private Map<String, Device> allDevice = new LinkedHashMap<String, Device>();// 设备类表
+     private ArrayList<DeviceStatus> allDeviceStatus = new ArrayList<DeviceStatus>();// 设备状态表
+     private Map<Integer, DeviceInfoMap> processInfo = new LinkedHashMap<Integer, DeviceInfoMap>();// 进程占用设备表
+     private Queue<QueueElem> d_Queue = new LinkedList<QueueElem>();// 设备等待队列
+     private DevicePanel showPanel;// 设备信息展示界面
 
-    public Map<String, Device> getAllDevice() {
-        return allDevice;
-    }
+     public Map<String, Device> getAllDevice() {
+     return allDevice;
+     }
 
-    public ArrayList<DeviceStatus> getAllDeviceStatus() {
-        return allDeviceStatus;
-    }
+     public ArrayList<DeviceStatus> getAllDeviceStatus() {
+     return allDeviceStatus;
+     }
 
-    public Map<Integer, DeviceInfoMap> getProcessInfo() {
-        return processInfo;
-    }
+     public Map<Integer, DeviceInfoMap> getProcessInfo() {
+     return processInfo;
+     }
 
-    public Queue<QueueElem> getD_Queue() {
-        return d_Queue;
-    }
-*/
-    DeviceManager() {
+     public Queue<QueueElem> getD_Queue() {
+     return d_Queue;
+     }
+
+     public DevicePanel getDevicePanel() {
+     return showPanel;
+     }
+     */
+    public DeviceManager() {
         // 初始化设备类、设备状态表
         initDevice();
         initDeviceStatus();
-
+        showPanel = new DevicePanel(allDevice, allDeviceStatus, processInfo, d_Queue);
     }
 
     /**
@@ -147,7 +153,7 @@ public class DeviceManager {
      *
      * @param process_ID 进程ID
      * @param borrowInfo 设备申请信息
-     * @return 申请设备超出总数-1 不安全不可分配0 安全可分配1 安全但等待2
+     * @return -1申请设备超出总数 0不安全不可分配 1安全可分配 2安全但等待
      */
     public int allocate(int process_ID, DeviceInfoMap borrowInfo) {
 //       判断申请是否合理（不超出总数）
@@ -207,7 +213,7 @@ public class DeviceManager {
      */
     private void activate() {
         // 判断是否可分配设备给当前进程元素（cur=new队列元素类）
-        QueueElem cur = this.d_Queue.remove();
+        QueueElem cur = d_Queue.peek();
         toBankJudge(cur);
     }
 
@@ -289,13 +295,13 @@ public class DeviceManager {
                 d_Queue.add(e);
             }
         } else {
+
             if (status == 1) {
                 // 将设备分配给cur.process_ID进程
                 // 剩下对应序列的进程按顺序入队列等待
                 allocateDevice(cur.process_ID, cur.borrowInfo);// 将设备分配给cur.process_ID进程
 
-// ********************************************************TODO，通知该进程 
-                deviceWatcher.allocatedDeviceTo(cur.process_ID);
+                deviceWatcher.allocatedDeviceTo(cur.process_ID, status);// 通知该进程 
 
                 bk.SafeSet.remove(0);// 除去序列首
 
@@ -313,6 +319,8 @@ public class DeviceManager {
                     d_Queue.add(e);
                 }
             }
+
+            showPanel.update(allDevice, allDeviceStatus, processInfo, d_Queue);
         }
 
         return status;// 返回0/1/2
