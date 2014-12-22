@@ -18,7 +18,7 @@ public class DeviceManager {
     ArrayList<DeviceStatus> allDeviceStatus = new ArrayList<DeviceStatus>();// 设备状态表
     Map<Integer, DeviceInfoMap> processInfo = new LinkedHashMap<Integer, DeviceInfoMap>();// 进程占用设备表
     Queue<QueueElem> d_Queue = new LinkedList<QueueElem>();// 设备等待队列
-    DevicePanel showPanel;// 设备信息展示界面
+    public DevicePanel showPanel;// 设备信息展示界面
 
     /*//以上这些属性，应设置为private，提供方法供外部(仅)读取，不能改变
      private Map<String, Device> allDevice = new LinkedHashMap<String, Device>();// 设备类表
@@ -81,6 +81,21 @@ public class DeviceManager {
                 allDeviceStatus.add(new DeviceStatus(value.name, i, i - value.r_address));
             }
         }
+    }
+    
+    /**
+     * 验证申请设备信息（设备名）是否合法（存在）
+     * @param info
+     * @return 
+     */
+    private boolean verifyBorrowInfo(DeviceInfoMap info){
+        
+        for (String dName : info.keySet()) {
+            if(!allDevice.containsKey(dName)){
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -153,14 +168,19 @@ public class DeviceManager {
      *
      * @param process_ID 进程ID
      * @param borrowInfo 设备申请信息
-     * @return -1申请设备超出总数 0不安全不可分配 1安全可分配 2安全但等待
+     * @return -2申请的设备不存在 -1申请设备超出总数 0不安全不可分配 1安全可分配 2安全但等待
      */
     public int allocate(int process_ID, DeviceInfoMap borrowInfo) {
 //       判断申请是否合理（不超出总数）
 //          合理，判断[设备等待队列]是否空
 //               是，第1个进程占用设备，直接分配，更新 设备分配表
 //               否，toBankJudge(cur)
-
+        
+        // 判断borrowInfo合法性
+        if(!verifyBorrowInfo(borrowInfo)){
+            return -2;
+        }
+        
         // 预处理borrowInfo
         borrowInfo = formatDeviceInfo(borrowInfo);
 

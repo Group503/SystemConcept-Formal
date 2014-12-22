@@ -129,7 +129,9 @@ public class DeviceManagerTest {
         //deviceManager.d_Queue.add(e);//加入等待队列
 
         int status = deviceManager.allocate(pcs, br);//模拟进程pcs=1申请1A,2B,2C
-        if (status == -1) {
+        if(status == -2){
+            System.out.println("进程P" + pcs + "申请的设备不存在！");
+        }else if (status == -1) {
             System.out.println("进程P" + pcs + "申请（+已占用）设备总量超过总数！");
         } else if (status == 0) {
             System.out.println("进程P" + pcs + "未通过银行家算法，进程不安全不可分配");
