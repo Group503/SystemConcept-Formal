@@ -13,7 +13,7 @@ public class DeviceManagerTest {
     public static void main(String args[]) {
 
 // *********************************************************************测试书本上的例题
-        DeviceManager deviceManager = new DeviceManager();// 设备管理实例
+        DeviceManager deviceManager = new DeviceManager();// 设备总管实例
         
         // 测试监听器
         deviceManager.addDeviceWatcher(new DeviceWatcherImpl() {

@@ -47,6 +47,9 @@ public class DeviceManager {
      return showPanel;
      }
      */
+    /**
+     * 无参构造方法
+     */
     public DeviceManager() {
         // 初始化设备类、设备状态表
         initDevice();
@@ -82,16 +85,17 @@ public class DeviceManager {
             }
         }
     }
-    
+
     /**
      * 验证申请设备信息（设备名）是否合法（存在）
+     *
      * @param info
-     * @return 
+     * @return
      */
-    private boolean verifyBorrowInfo(DeviceInfoMap info){
-        
+    private boolean verifyBorrowInfo(DeviceInfoMap info) {
+
         for (String dName : info.keySet()) {
-            if(!allDevice.containsKey(dName)){
+            if (!allDevice.containsKey(dName)) {
                 return false;
             }
         }
@@ -171,22 +175,16 @@ public class DeviceManager {
      * @return -2申请的设备不存在 -1申请设备超出总数 0不安全不可分配 1安全可分配 2安全但等待
      */
     public int allocate(int process_ID, DeviceInfoMap borrowInfo) {
-//       判断申请是否合理（不超出总数）
-//          合理，判断[设备等待队列]是否空
-//               是，第1个进程占用设备，直接分配，更新 设备分配表
-//               否，toBankJudge(cur)
-        
-        // 判断borrowInfo合法性
-        if(!verifyBorrowInfo(borrowInfo)){
+        // 检查borrowInfo中设备是否存在
+        if (!verifyBorrowInfo(borrowInfo)) {
             return -2;
         }
-        
-        // 预处理borrowInfo
-        borrowInfo = formatDeviceInfo(borrowInfo);
-
+        // 检查borrowInfo中设备数量是否合法
         if (!checkBorrow_All(borrowInfo)) {
             return -1;
         }
+        // 预处理borrowInfo，格式化
+        borrowInfo = formatDeviceInfo(borrowInfo);
 
         if (processInfo.isEmpty()) {// 进程占用设备表为空
             // 第1个进程申请设备，直接分配
@@ -196,9 +194,8 @@ public class DeviceManager {
             //System.out.println("进程占用设备表不为空");
             // 判断是否可分配设备给当前进程元素（cur=new队列元素类）
             QueueElem cur = new QueueElem(process_ID, borrowInfo);
-            return toBankJudge(cur);
+            return toBankJudge(cur);// 调用toBankJudge()
         }
-
     }
 
     /**
@@ -207,34 +204,38 @@ public class DeviceManager {
      * @return
      */
     public void deAllocate(int process_ID) {
-        DeviceInfoMap curPc = processInfo.get(process_ID);
+
+        DeviceInfoMap curPc = processInfo.get(process_ID);// 获取进程ID为process_ID的进程占用设备信息
         for (String dName : curPc.keySet()) {
+            // 更新总设备类表
             allDevice.get(dName).left += curPc.get(dName);
         }
 
         for (int i = 0; i < allDeviceStatus.size(); i++) {
-
+            // 遍历，查找目标进程
             DeviceStatus e = allDeviceStatus.get(i);
             if (e.process_ID == process_ID) {// 目标进程
-                //allDevice.get(e.name).left++;// 更新 设备类表
 
                 // 更新 设备状态表
                 allDeviceStatus.get(i).isAllocate = false;
                 allDeviceStatus.get(i).process_ID = -1;
+                break;
             }
         }
         processInfo.remove(process_ID);// 更新 进程占用设备表
         //printDev();// 打印输出
-        activate();
+        activate();// 调用activate（）
     }
 
     /**
      * 释放设备后，toBankJudge(cur)，判断是否能够分配设备给设备等待队列首的进程
      */
     private void activate() {
-        // 判断是否可分配设备给当前进程元素（cur=new队列元素类）
+        // 判断是否可分配设备给当前进程元素（cur=队列首元素）
         QueueElem cur = d_Queue.peek();
-        toBankJudge(cur);
+        if(cur != null){// 当等待队列不空
+            toBankJudge(cur);// 调用toBankJudge()
+        }
     }
 
     /**
@@ -264,25 +265,23 @@ public class DeviceManager {
     }
 
     /**
-     * 组装“银行”环境，调用银行家算法。根据返回结果，（分配设备，并）将（安全或不安全的）序列入设备等待队列
-     *
+     * 组装“银行”环境，调用银行家算法。 根据返回结果，（分配设备，并）将（安全或不安全的）序列入设备等待队列
      * @param cur 当前申请设备的进程信息，QueueElem队列元素
      * @return 0不安全不可分配 1安全可分配 2安全但等待
      */
     private int toBankJudge(QueueElem cur) {
-
         DeviceInfoMap Avaliable = new DeviceInfoMap();// 剩余设备信息
         Map<Integer, BKProcess> bkProcessES = new LinkedHashMap<Integer, BKProcess>();// 进程集合
-
+        
         // 组装Avaliable剩余设备信息
         for (String dName : allDevice.keySet()) {
             Avaliable.add(dName, allDevice.get(dName).left);
         }
-
         // 组装bkProcessES进程集合
         BKProcess bkpc = new BKProcess(processInfo.get(cur.process_ID), cur.borrowInfo);// (进程已占用设备信息，申请设备信息)
         // cur为第1个进程信息，入进程集
         bkProcessES.put(cur.process_ID, bkpc);
+        
         while (!d_Queue.isEmpty()) {// 设备等待队列中的进程，入进程集
             QueueElem e = d_Queue.remove();
             if (e.process_ID == cur.process_ID) {// 排除设备等待队列中与cur相同的进程
@@ -293,7 +292,7 @@ public class DeviceManager {
             bkProcessES.put(e.process_ID, bkpc);
         }
         Bank bk = new Bank(Avaliable, bkProcessES);// 初始化“银行”环境
-//***********************************************************************************************以上初始化“银行”环境
+    //********************************************************************************************以上初始化“银行”环境
         int status = bk.Safety();// 调用银行家算法，返回0/1/2
 
         System.out.println("*******安全系列如下********");
@@ -302,47 +301,34 @@ public class DeviceManager {
             System.out.print(pc_ID + ",");
         }
         System.out.println();
-
-        // 改变了Avaliable(内部)，Work(内部)，SafeSet(返回0.空；返回1/2,不空)，bkProcessES.Finished全true/false
-
-        // 根据返回值，（分配设备，并）更新设备等待队列
-        QueueElem e = null;
+        
+        //int status = bk.Safety();// 调用银行家算法，返回0/1/2
+        QueueElem e = null;// 根据返回值，（分配设备，并）更新设备等待队列
         if (status == 0) {
-
             // bkProcessES中的进程重新入队列
             for (Integer p_ID : bk.bkProcessES.keySet()) {
                 e = new QueueElem(p_ID, bk.bkProcessES.get(p_ID).Need);
                 d_Queue.add(e);
             }
         } else {
-
             if (status == 1) {
-                // 将设备分配给cur.process_ID进程
-                // 剩下对应序列的进程按顺序入队列等待
                 allocateDevice(cur.process_ID, cur.borrowInfo);// 将设备分配给cur.process_ID进程
-
                 deviceWatcher.allocatedDeviceTo(cur.process_ID, status);// 通知该进程 
-
                 bk.SafeSet.remove(0);// 除去序列首
-
                 // 剩下的进程对应序列顺序，入队列等待
                 for (Integer p_ID : bk.SafeSet) {
                     e = new QueueElem(p_ID, bk.bkProcessES.get(p_ID).Need);
                     d_Queue.add(e);
                 }
-
             } else {//status == 2
-
                 // 进程按序列顺序入队列等待
                 for (Integer p_ID : bk.SafeSet) {
                     e = new QueueElem(p_ID, bk.bkProcessES.get(p_ID).Need);
                     d_Queue.add(e);
                 }
             }
-
-            showPanel.update(allDevice, allDeviceStatus, processInfo, d_Queue);
+            showPanel.update(allDevice, allDeviceStatus, processInfo, d_Queue);// 更新设备信息展示Panel信息
         }
-
         return status;// 返回0/1/2
     }
 

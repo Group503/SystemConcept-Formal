@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * （银行）进程属性类
+ * （银行）进程信息类
  *
  * @author 刘恩坚
  */

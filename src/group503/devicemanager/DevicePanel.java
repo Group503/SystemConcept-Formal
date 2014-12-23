@@ -97,7 +97,6 @@ public class DevicePanel extends JPanel {
      */
     void update(Map<String, Device> allDevice, ArrayList<DeviceStatus> allDeviceStatus, Map<Integer, DeviceInfoMap> processInfo, Queue<QueueElem> d_Queue) {
 
-        updateQueue_Text(d_Queue);// 设备等待队列，文本信息
         updateQueue(d_Queue);// 设备等待队列表
         updateDevice(allDevice);// 总设备类表
         updateDeviceStatus(allDeviceStatus);// 设备状态表
@@ -105,10 +104,10 @@ public class DevicePanel extends JPanel {
     }
 
     /**
-     * 更新设备等待队列，文本信息
+     * 更新设备等待队列，表
      * @param d_Queue 设备等待队列
      */
-    private void updateQueue_Text(Queue<QueueElem> d_Queue) {
+    private void updateQueue(Queue<QueueElem> d_Queue) {
         String text = "";
 
         if (!d_Queue.isEmpty()) {
@@ -127,14 +126,7 @@ public class DevicePanel extends JPanel {
         text = "设备等待队列:\n\t" + text;
 
         jTx_Queue.setText(text);
-    }
-
-    /**
-     * 更新设备等待队列，表
-     * @param d_Queue 设备等待队列
-     */
-    private void updateQueue(Queue<QueueElem> d_Queue) {
-
+ // ***************************************************************以上为更新Queue_Text
         Vector columnNames = new Vector(Arrays.asList(new String[]{"进程ID", "_A", "_B", "_C"}));//列名
         Vector allRowVector = new Vector();//JTable总数据
 
